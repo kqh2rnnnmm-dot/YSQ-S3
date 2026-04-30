@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Опросник схем Джеффри Янга (YSQ-S3)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #ffffff;
+  --surface: #f8f9fa;
+  --surface2: #f1f3f5;
+  --border: #dee2e6;
+  --border-light: #e9ecef;
+  --text: #212529;
+  --text-secondary: #495057;
+  --text-muted: #868e96;
+  --accent: #2f6ee8;
+  --accent-light: #e8f0fd;
+  --accent-dark: #1a4fc4;
+  --green: #2b8a3e;
+  --green-bg: #ebfbee;
+  --orange: #e67700;
+  --orange-bg: #fff4e6;
+  --red: #c92a2a;
+  --red-bg: #fff5f5;
+  --radius: 8px;
+}
+
+/* Добавляем тёмную тему */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --border: #2a2a4a;
+    --border-light: #2a2a4a;
+    --text: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --text-muted: #888888;
+    --accent: #4a90e2;
+    --accent-light: #1a3a5c;
+    --accent-dark: #3a7bc8;
+  }
+  
+  .question-row:hover:not(.locked) { background: #1e2a4a; }
+  .question-row.answered { background: #1a3a2a; }
+  .question-row.active-next { background: #2a2010; }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  transition: background 0.3s, color 0.3s;
+}
+
+.wrapper {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+}
+
+/* Кнопка сброса прогресса */
+.reset-progress-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.reset-progress-btn:hover {
+  background: var(--red-bg);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* Навигация по доменам */
+.domain-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.domain-nav-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.domain-nav-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.domain-nav-btn.completed {
+  background: var(--green-bg);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* Таймер */
+.timer {
+  text-align: right;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* Анимации */
+.question-row.unlocked {
+  animation: fadeSlideIn 0.3s ease-out;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Индикатор загрузки */
+.loading-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-spinner {
+  background: white;
+  padding: 30px;
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+/* HEADER */
+header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--text);
+}
+
+.badge {
+  display: inline-block;
+  background: var(--surface2);
+  color: var(--text-secondary);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 20px; margin-bottom: 10px;
+}
+
+h1 {
+  font-size: clamp(22px, 4vw, 30px); font-weight: 700;
+  color: var(--text); line-height: 1.25; margin-bottom: 5px;
+}
+
+.header-sub { font-size: 13px; color: var(--text-muted); }
+
+/* INTRO */
+.intro-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px;
+  margin-bottom: 28px; font-size: 14px;
+  color: var(--text-secondary); line-height: 1.65;
+}
+.intro-card p + p { margin-top: 8px; }
+
+.scale-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px 16px; margin-top: 16px;
+  padding-top: 14px; border-top: 1px solid var(--border);
+}
+
+.scale-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text-secondary);
+}
+
+.scale-num {
+  width: 24px; height: 24px; min-width: 24px;
+  background: var(--accent); color: #fff;
+  border-radius: 50%; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600;
+}
+
+/* PROGRESS */
+.progress-wrap {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg); padding: 10px 0 12px;
+  margin-bottom: 28px; border-bottom: 1px solid var(--border-light);
+}
+
+.progress-meta {
+  display: flex; justify-content: space-between;
+  font-size: 12px; font-weight: 500; color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.progress-track {
+  height: 5px; background: var(--surface2);
+  border-radius: 3px; overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%; background: var(--accent);
+  border-radius: 3px; width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* DOMAIN */
+.domain-block { margin-bottom: 44px; }
+
+.domain-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 4px; flex-wrap: wrap;
+}
+
+.domain-index {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-light);
+  padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+}
+
+.domain-title {
+  font-size: 18px; font-weight: 700;
+  color: var(--text); line-height: 1.3;
+}
+
+.domain-desc {
+  font-size: 13px; color: var(--text-muted);
+  margin-top: 3px; margin-bottom: 16px;
+}
+
+/* SCHEMA */
+.schema-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px; overflow: hidden;
+}
+
+.schema-title {
+  background: var(--surface); padding: 9px 16px;
+  font-size: 12px; font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+/* QUESTION ROW */
+.question-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex; flex-direction: column; gap: 10px;
+  transition: background 0.1s, opacity 0.3s;
+}
+.question-row:last-child { border-bottom: none; }
+.question-row:hover:not(.locked) { background: #f8faff; }
+.question-row.answered { background: #f4fdf6; }
+
+/* LOCKED QUESTION - строгая блокировка */
+.question-row.locked {
+  opacity: 0.38;
+  pointer-events: none;
+  user-select: none;
+  filter: grayscale(30%);
+}
+
+/* Первый активный (ещё не отвеченный) — подсветка */
+.question-row.active-next {
+  background: #fffbf0;
+  border-left: 3px solid #fd7e14;
+}
+
+.question-text {
+  font-size: 15px; color: var(--text); line-height: 1.55;
+}
+
+.q-num {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted); margin-right: 5px; user-select: none;
+}
+
+.rating-wrap { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.rating-btn {
+  width: 38px; height: 38px;
+  border: 1.5px solid var(--border); background: var(--bg);
+  border-radius: 50%; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 14px;
+  font-weight: 500; color: var(--text-secondary);
+  transition: all 0.12s; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.rating-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.rating-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+/* Клавиатурные подсказки */
+.keyboard-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+/* SUBMIT */
+.submit-area {
+  text-align: center; margin-top: 36px;
+  padding-top: 28px; border-top: 1px solid var(--border);
+}
+
+.btn-primary {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius); padding: 13px 40px;
+  font-family: 'Inter', sans-serif; font-size: 15px;
+  font-weight: 600; cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-note {
+  font-size: 13px; color: var(--red);
+  font-weight: 500; margin-top: 12px; min-height: 20px;
+}
+
+/* ═══════════ RESULTS ═══════════ */
+#results { display: none; }
+
+.results-top {
+  margin-bottom: 32px; padding-bottom: 20px;
+  border-bottom: 2px solid var(--text);
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+
+.results-top-left h2 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+.results-top-left p { font-size: 14px; color: var(--text-muted); }
+
+.results-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+
+.btn-action {
+  background: transparent; color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 9px 18px;
+  font-family: 'Inter', sans-serif; font-size: 13px;
+  font-weight: 500; cursor: pointer; white-space: nowrap;
+  transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+}
+.btn-action:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+.btn-pdf {
+  background: var(--accent); color: #fff;
+  border-color: var(--accent);
+}
+.btn-pdf:hover { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
+
+.btn-json {
+  background: var(--surface);
+}
+.btn-json:hover { background: var(--surface2); }
+
+/* DOMAIN RESULT */
+.result-domain {
+  margin-bottom: 40px; border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+
+.result-domain-header {
+  background: var(--surface); padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+
+.result-domain-header .domain-index { font-size: 10px; }
+
+.result-domain-title-text { font-size: 15px; font-weight: 700; color: var(--text); }
+
+/* SCHEMA RESULT CARD */
+.schema-result-card {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+.schema-result-card:last-child { border-bottom: none; }
+
+.schema-result-top {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 10px; flex-wrap: wrap;
+}
+
+.schema-result-name {
+  font-size: 14px; font-weight: 700;
+  color: var(--text); flex: 1; min-width: 160px;
+}
+
+.schema-score-block {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+
+.score-circle {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; flex-shrink: 0;
+}
+.score-low    { background: var(--green-bg); color: var(--green); }
+.score-medium { background: var(--orange-bg); color: var(--orange); }
+.score-high   { background: var(--red-bg); color: var(--red); }
+
+.severity-tag {
+  font-size: 11px; font-weight: 700; padding: 3px 12px;
+  border-radius: 20px; letter-spacing: 0.03em; white-space: nowrap;
+}
+.tag-low    { background: var(--green-bg);  color: var(--green); }
+.tag-medium { background: var(--orange-bg); color: var(--orange); }
+.tag-high   { background: var(--red-bg);    color: var(--red); }
+
+.bar-track {
+  height: 8px; background: var(--surface2);
+  border-radius: 4px; overflow: hidden; margin-bottom: 12px;
+}
+.bar-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 0.7s cubic-bezier(0.4,0,0.2,1); width: 0%;
+}
+.bar-low    { background: #40c057; }
+.bar-medium { background: #fd7e14; }
+.bar-high   { background: #fa5252; }
+
+.schema-description {
+  font-size: 13px; color: var(--text-secondary);
+  line-height: 1.65; background: var(--surface);
+  border-radius: 6px; padding: 12px 14px;
+  border-left: 3px solid var(--border);
+}
+.schema-description.desc-low    { border-left-color: #40c057; }
+.schema-description.desc-medium { border-left-color: #fd7e14; }
+.schema-description.desc-high   { border-left-color: #fa5252; }
+
+.desc-title {
+  font-weight: 600; font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 5px; color: var(--text-muted);
+}
+
+/* DISCLAIMER */
+.disclaimer {
+  margin-top: 32px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px 22px; font-size: 13px;
+  color: var(--text-muted); line-height: 1.6;
+}
+.disclaimer strong { color: var(--text-secondary); }
+
+.results-footer { text-align: center; margin-top: 24px; }
+
+.btn-restart {
+  background: transparent; color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 10px 28px;
+  font-family: 'Inter', sans-serif; font-size: 14px;
+  font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.btn-restart:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+
+/* Сообщение о экспорте */
+.export-message {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--accent);
+  color: white;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-weight: 500;
+  z-index: 3000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* MOBILE */
+@media (max-width: 580px) {
+  .schema-result-top { flex-direction: column; align-items: flex-start; }
+  .schema-score-block { align-self: flex-start; }
+  .domain-title { font-size: 16px; }
+  .rating-btn { width: 34px; height: 34px; font-size: 13px; }
+  .results-top { flex-direction: column; }
+  .results-actions { width: 100%; }
+  .btn-action { flex: 1; justify-content: center; }
+  .reset-progress-btn { top: 10px; right: 10px; padding: 6px 12px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Кнопка сброса прогресса -->
+<button class="reset-progress-btn" onclick="confirmReset()" title="Сбросить прогресс">
+  🗑 Сбросить
+</button>
+
+<div class="wrapper">
+
+  <!-- ═══ FORM ═══ -->
+  <div id="form-section">
+    <header>
+      <div class="badge">Психодиагностический инструмент</div>
+      <h1>Опросник схем Джеффри Янга</h1>
+      <div class="header-sub">Young Schema Questionnaire — Short Form (YSQ-S3) · Русская адаптация</div>
+    </header>
+
+    <div class="intro-card">
+      <p>Перед вами список утверждений, описывающих убеждения и установки человека о себе и других людях. Прочитайте каждое утверждение и оцените, насколько оно верно <strong>применительно к вам лично</strong>.</p>
+      <p>Вопросы открываются последовательно — каждый следующий становится доступен только после ответа на предыдущий.</p>
+      <div class="scale-legend">
+        <div class="scale-item"><div class="scale-num">1</div><span>Совершенно не про меня</span></div>
+        <div class="scale-item"><div class="scale-num">2</div><span>Скорее не про меня</span></div>
+        <div class="scale-item"><div class="scale-num">3</div><span>Отчасти про меня</span></div>
+        <div class="scale-item"><div class="scale-num">4</div><span>Скорее про меня</span></div>
+        <div class="scale-item"><div class="scale-num">5</div><span>В основном про меня</span></div>
+        <div class="scale-item"><div class="scale-num">6</div><span>Полностью про меня</span></div>
+      </div>
+      <div class="keyboard-hint">💡 Используйте клавиши 1-6 для быстрого ответа на активный вопрос</div>
+    </div>
+
+    <!-- Навигация по доменам -->
+    <div class="domain-nav" id="domain-nav"></div>
+
+    <div class="timer" id="timer">⏱ 00:00</div>
+
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span id="progress-text">0 из 90 вопросов</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div id="questions-container"></div>
+
+    <div class="submit-area">
+      <button class="btn-primary" id="submit-btn" onclick="submitForm()" disabled>Получить результаты</button>
+      <div class="error-note" id="error-note"></div>
+    </div>
+  </div>
+
+  <!-- ═══ RESULTS ═══ -->
+  <div id="results">
+    <div class="print-header">
+      Опросник схем Джеффри Янга (YSQ-S3) · Результаты тестирования
+    </div>
+
+    <div class="results-top">
+      <div class="results-top-left">
+        <h2>Ваши результаты</h2>
+        <p>18 схем по 5 доменам · Средний балл от 1 до 6</p>
+        <p style="font-size:12px; color: var(--text-muted); margin-top:4px;" id="results-time"></p>
+      </div>
+      <div class="results-actions">
+        <button class="btn-action btn-pdf" onclick="exportToPDF()">
+          📄 Сохранить PDF
+        </button>
+        <button class="btn-action btn-json" onclick="exportToJSON()">
+          📊 Скачать JSON
+        </button>
+        <button class="btn-action" onclick="goBack()">← К вопросам</button>
+      </div>
+    </div>
+    <div id="results-body"></div>
+    <div class="disclaimer">
+      <strong>Важно.</strong> Данный опросник является скрининговым инструментом и не заменяет клинической диагностики. Результаты следует рассматривать совместно с квалифицированным психологом или психотерапевтом, прошедшим обучение схема-терапии. Высокий балл по какой-либо схеме не является диагнозом.
+    </div>
+    <div class="results-footer">
+      <button class="btn-restart" onclick="restartForm()">Пройти заново</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <p style="margin-bottom:10px;">⏳ Генерация PDF...</p>
+    <p style="font-size:12px; color: var(--text-muted);">Пожалуйста, подождите</p>
+  </div>
+</div>
+
+<script>
+// ─── ОПИСАНИЯ СХЕМ ────────────────────────────────────────────────────────────
+const SCHEMA_INFO = {
+  S01: {
+    what: 'Ощущение нестабильности значимых отношений. Человек с этой схемой убеждён, что близкие ненадёжны или обязательно уйдут. Это порождает тревогу привязанности, ревность и зависимое поведение.',
+    low:    'Вы воспринимаете свои отношения как стабильные и надёжные. Страх потери не является доминирующим мотивом в близости.',
+    medium: 'Периодически вы беспокоитесь о том, что кто-то из близких может вас покинуть. В ситуациях разлуки или конфликта тревога усиливается.',
+    high:   'Страх быть брошенным серьёзно влияет на ваше поведение в отношениях. Вы можете цепляться за людей, ревновать или избегать близости, чтобы не испытать боль потери.'
+  },
+  S02: {
+    what: 'Глубокое ожидание, что окружающие причинят боль, унизят или обманут. Человек постоянно настороже, с трудом доверяет и интерпретирует нейтральные действия как враждебные.',
+    low:    'Вы в целом доверяете людям и не склонны видеть в их поступках скрытый умысел.',
+    medium: 'В определённых ситуациях или с малознакомыми людьми вы с трудом доверяете и склонны к осторожности.',
+    high:   'Ожидание обмана и манипуляций серьёзно затрудняет создание близких отношений. Вы постоянно ищете скрытые мотивы в поведении людей.'
+  },
+  S03: {
+    what: 'Убеждённость, что базовые эмоциональные потребности — тепло, внимание, понимание — никогда не будут удовлетворены. Человек чувствует себя невидимым и эмоционально голодным даже в отношениях.',
+    low:    'Вы чувствуете себя достаточно понятым и получаете необходимое эмоциональное тепло от окружения.',
+    medium: 'Вы нередко чувствуете нехватку понимания или эмоциональной близости, хотя это не доминирует постоянно.',
+    high:   'Ощущение эмоциональной пустоты — характерное состояние. Вы редко чувствуете, что вас по-настоящему слышат или заботятся о вас.'
+  },
+  S04: {
+    what: 'Глубокое ощущение собственной порочности или неприемлемости. Человек убеждён, что если другие узнают его настоящего, то обязательно отвергнут. Часто сопровождается стыдом и самокритикой.',
+    low:    'В целом вы принимаете себя и не ощущаете себя «сломленным» или хуже других в своей сути.',
+    medium: 'Иногда вы чувствуете, что с вами что-то не так, и скрываете определённые стороны себя от страха отвержения.',
+    high:   'Стыд и ощущение внутренней дефектности являются центральным переживанием. Это значительно затрудняет близость и самораскрытие.'
+  },
+  S05: {
+    what: 'Устойчивое ощущение своей чуждости, непохожести на других людей. Человек не чувствует принадлежности ни к одной группе и ощущает себя одиноким даже в компании.',
+    low:    'Вы ощущаете себя частью социального мира, у вас есть чувство принадлежности к значимым группам.',
+    medium: 'Иногда вы чувствуете себя «не таким, как все» или чужим в определённых ситуациях, но это не постоянное состояние.',
+    high:   'Ощущение социальной чуждости и одиночества является постоянным фоном жизни, даже когда вы среди людей.'
+  },
+  S06: {
+    what: 'Убеждённость в неспособности справляться с повседневными задачами без помощи других. Человек сомневается в своей компетентности и избегает самостоятельных действий.',
+    low:    'Вы уверены в своей способности самостоятельно справляться с жизненными задачами и принимать решения.',
+    medium: 'В сложных ситуациях вы нередко испытываете неуверенность и ищете поддержки.',
+    high:   'Зависимость от мнений и помощи других людей серьёзно ограничивает вашу автономию и самостоятельность.'
+  },
+  S07: {
+    what: 'Хроническое ощущение надвигающейся катастрофы — болезни, несчастного случая или финансовой потери. Человек живёт в режиме постоянной тревожной готовности.',
+    low:    'Вы в целом спокойно воспринимаете жизненные риски, не склонны к катастрофизации.',
+    medium: 'Периодически вас охватывают тревожные предчувствия или вы чрезмерно беспокоитесь о возможных несчастьях.',
+    high:   'Страх катастрофы является постоянным спутником и серьёзно влияет на качество жизни и уровень тревоги.'
+  },
+  S08: {
+    what: 'Размытые личные границы с другими людьми. Человеку трудно отделить собственные чувства, потребности и ценности от чужих. Нередко сопровождается трудностями в построении идентичности.',
+    low:    'Вы хорошо чувствуете свои собственные потребности и эмоции, умеете отделять их от потребностей других.',
+    medium: 'В близких отношениях вам бывает трудно понять, где заканчиваются ваши чувства и начинаются чужие.',
+    high:   'Границы между вами и значимыми другими размыты. Вам трудно понять, что именно вы чувствуете независимо от других.'
+  },
+  S09: {
+    what: 'Убеждённость в собственной неудачливости и некомпетентности относительно сверстников. Человек считает, что неизбежно провалится в любом значимом деле.',
+    low:    'Вы воспринимаете себя достаточно компетентным и не склонны заранее ожидать провала.',
+    medium: 'Порой вас посещают сомнения в своих способностях, особенно при сравнении с другими.',
+    high:   'Ощущение собственной провальности серьёзно сдерживает вас от новых попыток и достижений.'
+  },
+  S10: {
+    what: 'Убеждённость в своей исключительности и праве на особые привилегии. Человек считает, что ограничения не должны распространяться на него, и нетерпим к отказам.',
+    low:    'Вы уважаете общие правила и границы других людей, не считаете себя исключением.',
+    medium: 'Иногда вам трудно принять отказ или ограничение, вы можете ощущать, что заслуживаете особого отношения.',
+    high:   'Убеждённость в своей исключительности и нетерпимость к ограничениям создаёт регулярные конфликты с окружающими.'
+  },
+  S11: {
+    what: 'Трудности с контролем собственных эмоций и импульсов. Человеку тяжело откладывать удовольствие, выносить дискомфорт и доводить дела до конца.',
+    low:    'Вы достаточно хорошо управляете своими эмоциями и поведением, умеете откладывать удовольствие ради целей.',
+    medium: 'В ряде ситуаций вам трудно сдерживать импульсы или выдерживать скуку и дискомфорт.',
+    high:   'Недостаток самоконтроля существенно влияет на вашу способность достигать целей и поддерживать стабильную жизнь.'
+  },
+  S12: {
+    what: 'Привычная уступчивость и подавление собственных желаний из страха конфликта или отвержения. Человеку трудно отстаивать свои права и выражать несогласие.',
+    low:    'Вы умеете отстаивать свои интересы и выражать несогласие, не испытывая парализующего страха.',
+    medium: 'В ряде ситуаций вам сложно сказать «нет» или отстоять своё мнение, особенно с авторитетными людьми.',
+    high:   'Страх реакции других систематически заставляет вас подавлять собственные желания и потребности.'
+  },
+  S13: {
+    what: 'Чрезмерная ориентация на нужды других в ущерб собственным. Человек склонен к жертвенности, испытывает вину при мысли о себе и нередко накапливает обиду.',
+    low:    'Вы умеете заботиться о других, не теряя связи с собственными потребностями.',
+    medium: 'Вы нередко ставите нужды других выше своих и испытываете вину, думая о себе первым.',
+    high:   'Самопожертвование является устойчивым паттерном. Вы отдаёте значительно больше, чем получаете, и со временем накапливаете усталость или обиду.'
+  },
+  S14: {
+    what: 'Чрезмерная зависимость самооценки от одобрения и признания окружающих. Человек приспосабливает поведение под ожидания других и болезненно реагирует на критику.',
+    low:    'Вы опираетесь прежде всего на собственную оценку себя, не испытывая чрезмерной зависимости от мнения окружающих.',
+    medium: 'Мнение других людей о вас важно и заметно влияет на ваше настроение и самооценку.',
+    high:   'Потребность в одобрении является центральной движущей силой поведения. Критика и неодобрение воспринимаются очень болезненно.'
+  },
+  S15: {
+    what: 'Систематический акцент на негативных аспектах жизни при игнорировании позитивных. Человек постоянно ожидает плохого исхода и острее переживает потери и разочарования.',
+    low:    'Вы способны замечать и ценить хорошее в жизни, не склонны к хроническому пессимизму.',
+    medium: 'В определённых сферах вы склонны ожидать плохого исхода и фиксироваться на негативе.',
+    high:   'Пессимистический взгляд на жизнь является фоновым состоянием. Хорошее воспринимается как временное, а плохое — как неизбежное.'
+  },
+  S16: {
+    what: 'Привычное подавление спонтанных эмоций, ориентация на рациональный контроль. Человек считает выражение чувств неуместным или опасным, что приводит к эмоциональной закрытости.',
+    low:    'Вы достаточно свободно выражаете свои эмоции и не считаете их проявление чем-то неуместным.',
+    medium: 'В ряде ситуаций или с определёнными людьми вам трудно открыто выражать чувства.',
+    high:   'Систематическое подавление эмоций является характерным стилем. Это может приводить к внутреннему напряжению и трудностям в близости.'
+  },
+  S17: {
+    what: 'Неотступное внутреннее давление соответствовать чрезвычайно высоким стандартам. Часто сопровождается перфекционизмом, жёсткой самокритикой и трудностью с отдыхом.',
+    low:    'Вы придерживаетесь разумных стандартов, умеете принимать собственные несовершенства и уделять время отдыху.',
+    medium: 'В значимых для вас областях вы предъявляете к себе повышенные требования и критикуете себя за несоответствие.',
+    high:   'Перфекционизм и жёсткая самокритика существенно влияют на качество жизни. Вы редко довольны собой и мало отдыхаете.'
+  },
+  S18: {
+    what: 'Убеждённость, что люди заслуживают наказания за ошибки, и трудности с прощением. Человек нетерпим к слабостям и несоответствию стандартам.',
+    low:    'Вы достаточно терпимы к чужим ошибкам и способны к прощению, не требуя обязательного наказания.',
+    medium: 'Иногда вам трудно простить людей или проявить снисхождение к чужим слабостям и промахам.',
+    high:   'Карательная установка является выраженным паттерном. Вам трудно прощать других и себя, что поддерживает хроническое напряжение в отношениях.'
+  }
+};
+
+// ─── ДАННЫЕ ОПРОСНИКА ─────────────────────────────────────────────────────────
+const DOMAINS = [
+  { id:'D1', title:'Отвержение и разрыв связей',
+    desc:'Ожидание, что потребности в безопасности, стабильности, заботе и принятии не будут удовлетворены',
+    schemas:[
+      { id:'S01', name:'Покинутость / Нестабильность', items:[
+        'Я беспокоюсь, что люди, которых я люблю, покинут меня или бросят.',
+        'Я цепляюсь за людей, потому что боюсь, что они уйдут.',
+        'Я боюсь, что близкие мне люди умрут, даже если для этого нет реальных оснований.',
+        'Я чувствую, что у меня нет стабильной почвы под ногами — всё вокруг может рухнуть в любой момент.',
+        'Я нервничаю, когда кто-то из близких проводит время без меня.'
+      ]},
+      { id:'S02', name:'Недоверие / Ожидание жестокого обращения', items:[
+        'Я ожидаю, что люди рано или поздно причинят мне боль.',
+        'Я очень осторожен, когда кто-то проявляет ко мне чрезмерную доброту — мне кажется, что за этим что-то скрывается.',
+        'Большинству людей нельзя доверять.',
+        'Меня легко обидеть.',
+        'Я думаю, что другие люди пытаются манипулировать мной.'
+      ]},
+      { id:'S03', name:'Эмоциональная депривация', items:[
+        'Мне не хватает тепла и внимания от окружающих.',
+        'Я редко нахожу людей, которые действительно слушают и понимают меня.',
+        'Мне трудно получить достаточно любви и заботы от других.',
+        'Большую часть времени мне не с кем поговорить по душам.',
+        'Мне не хватает стабильного человека, который давал бы мне мудрые советы и поддержку.'
+      ]},
+      { id:'S04', name:'Дефектность / Стыд', items:[
+        'Я чувствую, что со мной что-то фундаментально не так.',
+        'Я скрываю себя настоящего, потому что боюсь, что меня отвергнут, когда узнают поближе.',
+        'Мне стыдно за многие мои черты и поступки.',
+        'Если бы другие узнали меня по-настоящему, они отвернулись бы от меня.',
+        'Я чувствую себя хуже большинства людей.'
+      ]},
+      { id:'S05', name:'Социальная изоляция / Отчуждённость', items:[
+        'Я чувствую себя не таким, как все.',
+        'Я не вписываюсь ни в одну группу людей.',
+        'Я одинок, даже когда нахожусь среди людей.',
+        'Мне кажется, что меня никто не понимает по-настоящему.',
+        'Я чужой в этом мире.'
+      ]}
+    ]
+  },
+  { id:'D2', title:'Нарушение автономии и достижений',
+    desc:'Ожидания о себе и окружающем мире, которые мешают успешно действовать независимо',
+    schemas:[
+      { id:'S06', name:'Зависимость / Беспомощность', items:[
+        'Мне трудно справляться с повседневными делами без помощи других.',
+        'Я не уверен, что смогу справиться с жизнью самостоятельно.',
+        'Я прошу советов гораздо больше, чем большинство людей.',
+        'Я не чувствую себя достаточно компетентным, чтобы решать проблемы без поддержки.',
+        'Мне трудно принимать решения без чьей-либо помощи.'
+      ]},
+      { id:'S07', name:'Уязвимость к опасности или болезни', items:[
+        'Я постоянно жду, что вот-вот произойдёт что-то плохое.',
+        'Я боюсь, что у меня обнаружат серьёзную болезнь, даже если врачи говорят, что я здоров.',
+        'Я слишком беспокоюсь о природных катастрофах, преступлениях или авиакатастрофах.',
+        'Я чувствую, что катастрофа может произойти в любой момент.',
+        'Я постоянно тревожусь о своей безопасности или безопасности близких.'
+      ]},
+      { id:'S08', name:'Запутанность / Неразвитая идентичность', items:[
+        'Мне трудно отделить свои потребности и чувства от потребностей близких людей.',
+        'Я часто не знаю, что именно я чувствую на самом деле.',
+        'Моё мнение о себе сильно меняется в зависимости от того, с кем я общаюсь.',
+        'Порой я не знаю, кто я такой и каковы мои жизненные ценности.',
+        'Я слишком зависим эмоционально от близких людей.'
+      ]},
+      { id:'S09', name:'Провал / Неудача', items:[
+        'Я ощущаю себя менее способным, чем мои ровесники.',
+        'Я провален в работе или учёбе.',
+        'Большинство людей умнее, успешнее или способнее меня.',
+        'Я не верю, что могу достичь успеха.',
+        'Мне стыдно за свои достижения по сравнению с другими.'
+      ]}
+    ]
+  },
+  { id:'D3', title:'Нарушение границ',
+    desc:'Недостаток внутренних границ, ответственности или долгосрочных целей',
+    schemas:[
+      { id:'S10', name:'Привилегированность / Грандиозность', items:[
+        'Я считаю, что мне должны позволять делать то, что я хочу, без ограничений.',
+        'Я лучше, чем большинство людей, поэтому мне не обязательно следовать тем же правилам.',
+        'Я очень стараюсь получить то, что хочу, невзирая на то, как это влияет на других.',
+        'Я нетерпелив, когда другие не дают мне того, чего я хочу.',
+        'Мне трудно принимать слово «нет», когда я чего-то хочу.'
+      ]},
+      { id:'S11', name:'Недостаточность самоконтроля / Самодисциплины', items:[
+        'Мне очень трудно контролировать свои эмоции.',
+        'Я не могу заставить себя делать что-то, если это скучно или неприятно.',
+        'Когда я не могу немедленно получить желаемое, меня охватывает расстройство или злость.',
+        'Мне трудно придерживаться рутины или выполнять монотонные задачи.',
+        'Когда задача начинает казаться сложной, я обычно перестаю её делать.'
+      ]}
+    ]
+  },
+  { id:'D4', title:'Направленность на других',
+    desc:'Чрезмерное внимание к потребностям других в ущерб собственным',
+    schemas:[
+      { id:'S12', name:'Покорность / Подчинение', items:[
+        'Я чувствую, что мои желания и мнение не имеют особого значения.',
+        'Я обычно позволяю другим принимать решения за меня.',
+        'Мне очень трудно требовать, чтобы мои права соблюдались.',
+        'Мне трудно выражать гнев и несогласие, когда кто-то обращается со мной плохо.',
+        'Я беспокоюсь, что расстрою или причиню боль людям, если скажу им «нет».'
+      ]},
+      { id:'S13', name:'Самопожертвование', items:[
+        'Я много отдаю, но мало получаю от других.',
+        'Меня всегда привлекали люди, которые нуждаются в помощи.',
+        'Я чувствую вину, когда думаю сначала о себе.',
+        'Я ставлю потребности других выше своих.',
+        'Я чувствую, что недостаточно даю людям, и это меня расстраивает.'
+      ]},
+      { id:'S14', name:'Поиск одобрения / Признания', items:[
+        'Мне важно, что люди думают обо мне.',
+        'Я стараюсь нравиться людям настолько, что не всегда остаюсь собой.',
+        'Мне очень важно быть принятым и одобренным окружающими.',
+        'Я много думаю о том, что другие думают о моих действиях.',
+        'Мне трудно расслабиться, если я не знаю, что нравлюсь людям.'
+      ]}
+    ]
+  },
+  { id:'D5', title:'Сверхбдительность и подавление',
+    desc:'Подавление спонтанных чувств и импульсов, а также жёсткие внутренние правила',
+    schemas:[
+      { id:'S15', name:'Негативизм / Пессимизм', items:[
+        'Я сосредотачиваюсь на том, что может пойти не так, даже в хороших ситуациях.',
+        'Если что-то хорошее происходит, я жду, когда за этим последует плохое.',
+        'Мне трудно поверить в долгосрочное счастье.',
+        'Я очень остро реагирую на потери и разочарования.',
+        'Я беспокоюсь о деньгах и будущем, даже когда у меня всё хорошо.'
+      ]},
+      { id:'S16', name:'Подавление эмоций', items:[
+        'Я считаю, что важно не показывать свои чувства, даже если внутри всё бурлит.',
+        'Я контролирую свои эмоции настолько, что люди думают, будто мне всё равно.',
+        'Мне кажется неуместным выражать чувства перед другими.',
+        'Я не позволяю себе плакать или злиться на людях.',
+        'Я держу свои эмоции при себе, чтобы не казаться слабым.'
+      ]},
+      { id:'S17', name:'Жёсткие стандарты / Придирчивость к себе', items:[
+        'Я должен быть лучшим во всём, что делаю.',
+        'Я так занят достижением целей, что у меня нет времени наслаждаться жизнью.',
+        'Мне почти никогда не удаётся соответствовать собственным стандартам.',
+        'Деньги, статус и достижения для меня важнее отдыха и удовольствий.',
+        'Я критикую себя, когда не достигаю своих высоких стандартов.'
+      ]},
+      { id:'S18', name:'Карательность / Наказание', items:[
+        'Люди должны расплачиваться за свои ошибки.',
+        'Мне трудно прощать людей.',
+        'Я очень нетерпелив, когда люди ссылаются на причины своих ошибок.',
+        'Я думаю, что люди, которые плохо себя ведут, должны быть наказаны.',
+        'Мне трудно проявлять теплоту к людям, которые меня обидели.'
+      ]}
+    ]
+  }
+];
+
+// ─── СОСТОЯНИЕ ────────────────────────────────────────────────────────────────
+const answers = {};
+let totalQuestions = 0;
+let lastResults = null;
+let startTime = Date.now();
+let timerInterval = null;
+
+// Плоский список всех id вопросов по порядку
+const questionOrder = [];
+
+// ─── LOCAL STORAGE ────────────────────────────────────────────────────────────
+function saveProgress() {
+  try {
+    const data = {
+      answers: answers,
+      timestamp: Date.now(),
+      startTime: startTime
+    };
+    localStorage.setItem('ysq-progress', JSON.stringify(data));
+  } catch (e) {
+    console.warn('Невозможно сохранить прогресс:', e);
+  }
+}
+
+function loadProgress() {
+  try {
+    const saved = localStorage.getItem('ysq-progress');
+    if (saved) {
+      const data = JSON.parse(saved);
+      // Восстанавливаем только если прошло менее 24 часов
+      if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+        Object.assign(answers, data.answers);
+        startTime = data.startTime || Date.now();
+        return true;
+      }
+    }
+  } catch (e) {
+    console.warn('Невозможно загрузить прогресс:', e);
+  }
+  return false;
+}
+
+function clearProgress() {
+  localStorage.removeItem('ysq-progress');
+}
+
+// ─── ТАЙМЕР ───────────────────────────────────────────────────────────────────
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  document.getElementById('timer').textContent = 
+    `⏱ ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function startTimer() {
+  timerInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function getElapsedTimeString() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  return `${mins} мин ${secs} сек`;
+}
+
+// ─── ПОСТРОЕНИЕ ФОРМЫ ─────────────────────────────────────────────────────────
+function buildDomainNav() {
+  const nav = document.getElementById('domain-nav');
+  nav.innerHTML = '';
+  
+  DOMAINS.forEach((domain, di) => {
+    const btn = document.createElement('button');
+    btn.className = 'domain-nav-btn';
+    btn.textContent = `Домен ${di + 1}`;
+    btn.onclick = () => scrollToDomain(di);
+    btn.id = `nav-d${di}`;
+    nav.appendChild(btn);
+  });
+}
+
+function scrollToDomain(index) {
+  const domains = document.querySelectorAll('.domain-block');
+  if (domains[index]) {
+    domains[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function updateDomainNav() {
+  let qNum = 0;
+  DOMAINS.forEach((domain, di) => {
+    let domainCompleted = true;
+    domain.schemas.forEach(schema => {
+      schema.items.forEach(() => {
+        qNum++;
+        if (!answers[`q${qNum}`]) {
+          domainCompleted = false;
+        }
+      });
+    });
+    
+    const btn = document.getElementById(`nav-d${di}`);
+    if (btn) {
+      btn.classList.toggle('completed', domainCompleted);
+    }
+  });
+}
+
+function buildQuestions() {
+  const container = document.getElementById('questions-container');
+  let qNum = 0;
+
+  DOMAINS.forEach((domain, di) => {
+    const domainDiv = document.createElement('div');
+    domainDiv.className = 'domain-block';
+    domainDiv.id = `domain-${di}`;
+    domainDiv.innerHTML = `
+      <div class="domain-header">
+        <span class="domain-index">Домен ${di + 1}</span>
+        <span class="domain-title">${domain.title}</span>
+      </div>
+      <div class="domain-desc">${domain.desc}</div>
+    `;
+
+    domain.schemas.forEach(schema => {
+      const schemaDiv = document.createElement('div');
+      schemaDiv.className = 'schema-block';
+      schemaDiv.innerHTML = `<div class="schema-title">${schema.name}</div>`;
+
+      schema.items.forEach(text => {
+        qNum++; totalQuestions++;
+        const qId = `q${qNum}`;
+        questionOrder.push(qId);
+
+        const row = document.createElement('div');
+        row.className = 'question-row locked';
+        row.id = `row-${qId}`;
+        row.innerHTML = `
+          <div class="question-text"><span class="q-num">${qNum}.</span>${text}</div>
+          <div class="rating-wrap" id="rating-${qId}">
+            ${[1,2,3,4,5,6].map(v =>
+              `<button class="rating-btn" data-q="${qId}" data-v="${v}" onclick="selectRating('${qId}',${v})" tabindex="-1">${v}</button>`
+            ).join('')}
+          </div>
+        `;
+        schemaDiv.appendChild(row);
+      });
+
+      domainDiv.appendChild(schemaDiv);
+    });
+
+    container.appendChild(domainDiv);
+  });
+
+  // Восстановить прогресс или начать заново
+  if (loadProgress() && Object.keys(answers).length > 0) {
+    restoreAnsweredState();
+  } else {
+    unlockQuestion(0);
+  }
+
+  buildDomainNav();
+  updateTimer();
+}
+
+function restoreAnsweredState() {
+  // Пометить все отвеченные вопросы
+  questionOrder.forEach((qId, idx) => {
+    if (answers[qId]) {
+      const row = document.getElementById(`row-${qId}`);
+      if (row) {
+        row.classList.remove('locked');
+        row.classList.add('answered');
+        row.classList.remove('active-next');
+        
+        // Подсветить выбранную кнопку
+        document.querySelectorAll(`#rating-${qId} .rating-btn`).forEach(b => {
+          b.classList.toggle('active', parseInt(b.dataset.v) === answers[qId]);
+        });
+      }
+    }
+  });
+  
+  // Разблокировать следующий после последнего отвеченного
+  const lastAnsweredIdx = questionOrder.findLastIndex(qId => answers[qId]);
+  if (lastAnsweredIdx >= 0 && lastAnsweredIdx < questionOrder.length - 1) {
+    unlockQuestion(lastAnsweredIdx + 1);
+  }
+  
+  updateProgress();
+  updateDomainNav();
+  updateSubmitButton();
+}
+
+// Разблокировать вопрос по индексу в questionOrder
+function unlockQuestion(idx) {
+  if (idx >= questionOrder.length) return;
+  const qId = questionOrder[idx];
+  const row = document.getElementById(`row-${qId}`);
+  if (!row) return;
+  
+  // Убираем locked у этого вопроса
+  row.classList.remove('locked');
+  
+  // Помечаем как активный, только если не отвечен
+  if (!answers[qId]) {
+    // Убираем подсветку со всех
+    document.querySelectorAll('.question-row.active-next').forEach(r => {
+      r.classList.remove('active-next');
+    });
+    row.classList.add('active-next');
+  }
+}
+
+// ─── ВЫБОР ОТВЕТА ─────────────────────────────────────────────────────────────
+function selectRating(qId, val) {
+  const idx = questionOrder.indexOf(qId);
+  const row = document.getElementById(`row-${qId}`);
+  
+  // Строгая проверка: нельзя отвечать на заблокированный вопрос
+  if (!row || row.classList.contains('locked')) {
+    return;
+  }
+
+  // Сохраняем ответ
+  answers[qId] = val;
+  row.classList.add('answered');
+  row.classList.remove('active-next');
+
+  // Подсвечиваем выбранную кнопку
+  document.querySelectorAll(`#rating-${qId} .rating-btn`).forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.v) === val);
+  });
+
+  // Блокируем текущий вопрос от повторных изменений
+  row.classList.add('locked');
+  
+  // Разблокируем следующий вопрос
+  const nextIdx = idx + 1;
+  if (nextIdx < questionOrder.length) {
+    unlockQuestion(nextIdx);
+    // Плавно скроллим к следующему вопросу
+    setTimeout(() => {
+      const nextRow = document.getElementById(`row-${questionOrder[nextIdx]}`);
+      if (nextRow) {
+        nextRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+  }
+
+  updateProgress();
+  updateDomainNav();
+  saveProgress();
+  updateSubmitButton();
+}
+
+// ─── ПРОГРЕСС ────────────────────────────────────────────────────────────────
+function updateProgress() {
+  const n = Object.keys(answers).length;
+  const pct = Math.round(n / totalQuestions * 100);
+  document.getElementById('progress-text').textContent = `${n} из ${totalQuestions} вопросов`;
+  document.getElementById('progress-pct').textContent = `${pct}%`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function updateSubmitButton() {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = Object.keys(answers).length < totalQuestions;
+}
+
+// ─── ОТПРАВКА ────────────────────────────────────────────────────────────────
+function submitForm() {
+  const n = Object.keys(answers).length;
+  if (n < totalQuestions) {
+    const remaining = totalQuestions - n;
+    document.getElementById('error-note').textContent =
+      `Пожалуйста, ответьте на все вопросы. Осталось: ${remaining}.`;
+    // Скролл к первому неотвеченному
+    for (const qId of questionOrder) {
+      if (!answers[qId]) {
+        const el = document.getElementById(`row-${qId}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        break;
+      }
+    }
+    return;
+  }
+  
+  stopTimer();
+  lastResults = computeResults();
+  renderResults(lastResults);
+  clearProgress(); // Очищаем сохраненный прогресс после завершения
+}
+
+// ─── ВЫЧИСЛЕНИЕ ───────────────────────────────────────────────────────────────
+function computeResults() {
+  const results = [];
+  let qNum = 0;
+  DOMAINS.forEach((domain, di) => {
+    const dr = { id: domain.id, title: domain.title, index: di + 1, schemas: [] };
+    domain.schemas.forEach(schema => {
+      let sum = 0;
+      schema.items.forEach(() => { qNum++; sum += answers[`q${qNum}`] || 0; });
+      const avg = sum / schema.items.length;
+      const pct = ((avg - 1) / 5) * 100;
+      let level = avg < 2.5 ? 'low' : avg < 4 ? 'medium' : 'high';
+      dr.schemas.push({ id: schema.id, name: schema.name, avg, pct, level, items: schema.items.map((_, i) => answers[`q${qNum - schema.items.length + i + 1}`]) });
+    });
+    results.push(dr);
+  });
+  return results;
+}
+
+// ─── РЕНДЕР РЕЗУЛЬТАТОВ ──────────────────────────────────────────────────────
+function renderResults(results) {
+  const body = document.getElementById('results-body');
+  body.innerHTML = '';
+  const levelLabel = { low: 'Низкий', medium: 'Умеренный', high: 'Высокий' };
+  const levelTag   = { low: 'tag-low', medium: 'tag-medium', high: 'tag-high' };
+
+  document.getElementById('results-time').textContent = 
+    `⏱ Время прохождения: ${getElapsedTimeString()}`;
+
+  results.forEach(domain => {
+    const domDiv = document.createElement('div');
+    domDiv.className = 'result-domain';
+    domDiv.innerHTML = `
+      <div class="result-domain-header">
+        <span class="domain-index">Домен ${domain.index}</span>
+        <span class="result-domain-title-text">${domain.title}</span>
+      </div>
+    `;
+
+    domain.schemas.forEach(schema => {
+      const info = SCHEMA_INFO[schema.id] || {};
+      const card = document.createElement('div');
+      card.className = 'schema-result-card';
+      card.innerHTML = `
+        <div class="schema-result-top">
+          <div class="schema-result-name">${schema.name}</div>
+          <div class="schema-score-block">
+            <div class="score-circle score-${schema.level}">${schema.avg.toFixed(1)}</div>
+            <div class="severity-tag ${levelTag[schema.level]}">${levelLabel[schema.level]}</div>
+          </div>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill bar-${schema.level}" style="width:0%" data-pct="${schema.pct}"></div>
+        </div>
+        <div class="schema-description desc-${schema.level}">
+          <div class="desc-title">Что означает эта схема</div>
+          <div>${info.what || ''}</div>
+          ${info[schema.level] ? `<div style="margin-top:8px"><strong>Для вас:</strong> ${info[schema.level]}</div>` : ''}
+        </div>
+      `;
+      domDiv.appendChild(card);
+    });
+
+    body.appendChild(domDiv);
+  });
+
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 80);
+}
+
+// ─── ЭКСПОРТ PDF ─────────────────────────────────────────────────────────────
+async function exportToPDF() {
+  const overlay = document.getElementById('loading-overlay');
+  overlay.style.display = 'flex';
+  
+  try {
+    const element = document.getElementById('results');
+    
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `YSQ-S3_результаты_${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        letterRendering: true
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'portrait' 
+      }
+    };
+    
+    await html2pdf().set(opt).from(element).save();
+    
+    showMessage('PDF сохранён успешно!');
+  } catch (error) {
+    console.error('Ошибка при создании PDF:', error);
+    showMessage('Ошибка при создании PDF. Попробуйте ещё раз.', true);
+  } finally {
+    overlay.style.display = 'none';
+  }
+}
+
+// ─── ЭКСПОРТ JSON ────────────────────────────────────────────────────────────
+function exportToJSON() {
+  if (!lastResults) {
+    showMessage('Нет результатов для экспорта', true);
+    return;
+  }
+  
+  const exportData = {
+    title: 'Опросник схем Джеффри Янга (YSQ-S3)',
+    date: new Date().toISOString(),
+    elapsedTime: getElapsedTimeString(),
+    totalQuestions: totalQuestions,
+    results: lastResults,
+    rawAnswers: answers
+  };
+  
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `YSQ-S3_результаты_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showMessage('JSON файл сохранён!');
+}
+
+// ─── СООБЩЕНИЕ ───────────────────────────────────────────────────────────────
+function showMessage(text, isError = false) {
+  const existing = document.querySelector('.export-message');
+  if (existing) existing.remove();
+  
+  const msg = document.createElement('div');
+  msg.className = 'export-message';
+  msg.style.background = isError ? 'var(--red)' : 'var(--accent)';
+  msg.textContent = text;
+  document.body.appendChild(msg);
+  
+  setTimeout(() => {
+    msg.style.opacity = '0';
+    msg.style.transition = 'opacity 0.3s';
+    setTimeout(() => msg.remove(), 300);
+  }, 3000);
+}
+
+// ─── НАВИГАЦИЯ ───────────────────────────────────────────────────────────────
+function goBack() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('form-section').style.display = 'block';
+  startTimer();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function restartForm() {
+  if (confirm('Вы уверены? Весь прогресс будет потерян.')) {
+    stopTimer();
+    for (const k in answers) delete answers[k];
+    lastResults = null;
+    startTime = Date.now();
+    clearProgress();
+
+    // Сбросить состояние всех строк
+    document.querySelectorAll('.question-row').forEach(row => {
+      row.classList.remove('answered', 'active-next');
+      row.classList.add('locked');
+    });
+    document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('error-note').textContent = '';
+
+    // Разблокировать первый вопрос
+    unlockQuestion(0);
+
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('form-section').style.display = 'block';
+    updateProgress();
+    startTimer();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function confirmReset() {
+  if (Object.keys(answers).length > 0) {
+    if (confirm('Сбросить весь прогресс? Это действие нельзя отменить.')) {
+      restartForm();
+    }
+  } else {
+    showMessage('Нет активного прогресса');
+  }
+}
+
+// ─── КЛАВИАТУРНАЯ НАВИГАЦИЯ ──────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  // Игнорируем если фокус на input или результаты показаны
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || 
+      document.getElementById('results').style.display === 'block') {
+    return;
+  }
+  
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= 6) {
+    const activeRow = document.querySelector('.question-row.active-next');
+    if (activeRow) {
+      const qId = activeRow.id.replace('row-', '');
+      selectRating(qId, num);
+    }
+  }
+});
+
+// ─── ИНИЦИАЛИЗАЦИЯ ────────────────────────────────────────────────────────────
+buildQuestions();
+startTimer();
+updateProgress();
+
+// Обработчик закрытия страницы
+window.addEventListener('beforeunload', () => {
+  if (Object.keys(answers).length > 0 && document.getElementById('results').style.display === 'none') {
+    saveProgress();
+  }
+});
+</script>
+</body>
+</html>
